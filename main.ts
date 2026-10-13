@@ -63,7 +63,8 @@ namespace SH1107 {
         sendCommand(0xA6)
         sendCommand(0xAF)
         basic.pause(100)
-        sendCommand(0xA5)
+        sendCommand(0xA4)
+        sendCommand(0xA6)
 
         basic.pause(100)
         initialized = true
