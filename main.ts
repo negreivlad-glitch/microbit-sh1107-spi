@@ -46,10 +46,11 @@ namespace SH1107 {
         basic.pause(100)
 
         sendCommand(0xAE)
+        sendCommand(0x20)
         sendPair(0xA8, 0x7F)
         sendPair(0xD3, 0x60)
-        sendCommand(0x40)
-        sendPair(0xAD, 0x81)
+        sendPair(0xDC, 0x00)
+        sendPair(0xAD, 0x8A)
         sendPair(0xD5, 0x50)
         sendPair(0xD9, 0x22)
         sendPair(0xDB, 0x35)
