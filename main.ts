@@ -1,17 +1,30 @@
 
 namespace SH1107 {
-    let initialized = false
-
-    // Broches utilisées sur le micro:bit
     const CS = DigitalPin.P16
     const DC = DigitalPin.P2
     const RST = DigitalPin.P12
 
-    function command(value: number): void {
-        pins.digitalWritePin(DC, 0)
+    const WIDTH = 64
+    const HEIGHT = 128
+    let initialized = false
+
+    function sendCommand(value: number): void {
         pins.digitalWritePin(CS, 0)
+        pins.digitalWritePin(DC, 0)
         pins.spiWrite(value)
         pins.digitalWritePin(CS, 1)
+    }
+
+    function sendData(value: number): void {
+        pins.digitalWritePin(CS, 0)
+        pins.digitalWritePin(DC, 1)
+        pins.spiWrite(value)
+        pins.digitalWritePin(CS, 1)
+    }
+
+    function sendPair(command: number, value: number): void {
+        sendCommand(command)
+        sendCommand(value)
     }
 
     //% block="Initialiser OLED"
@@ -26,28 +39,55 @@ namespace SH1107 {
 
         pins.digitalWritePin(CS, 1)
         pins.digitalWritePin(DC, 1)
+
         pins.digitalWritePin(RST, 0)
         basic.pause(50)
         pins.digitalWritePin(RST, 1)
         basic.pause(100)
 
-        command(0xAE)
+        sendCommand(0xAE)
+        sendPair(0xA8, 0x7F)
+        sendPair(0xD3, 0x60)
+        sendCommand(0x40)
+        sendPair(0xAD, 0x81)
+        sendPair(0xD5, 0x50)
+        sendPair(0xD9, 0x22)
+        sendPair(0xDB, 0x35)
+        sendCommand(0xA1)
+        sendCommand(0xC0)
+        sendCommand(0xA6)
+        sendPair(0x81, 0x80)
+        sendCommand(0xAF)
+
+        basic.pause(100)
         initialized = true
+        effacerOLED()
     }
 
     //% block="Effacer OLED"
     export function effacerOLED(): void {
-        if (initialized) {
-            // L'effacement complet sera ajouté avec la gestion de la mémoire écran.
-            command(0xAE)
+        if (!initialized) {
+            return
+        }
+
+        for (let page = 0; page < 16; page++) {
+            sendCommand(0xB0 + page)
+            sendCommand(0x00)
+            sendCommand(0x10)
+
+            for (let x = 0; x < WIDTH; x++) {
+                sendData(0x00)
+            }
         }
     }
 
     //% block="Afficher texte %texte"
     export function afficherTexte(texte: string): void {
-        if (initialized) {
-            // L'affichage des caractères sera ajouté ensuite.
-            basic.showString(texte)
+        if (!initialized) {
+            return
         }
+
+        // Le dessin des caractères sera ajouté après
+        // validation de l'initialisation et de l'effacement.
     }
 }
