@@ -68,7 +68,7 @@ namespace SH1107 {
 
         basic.pause(100)
         initialized = true
-        effacerOLED()
+        //effacerOLED()
     }
 
     //% block="Effacer OLED"
