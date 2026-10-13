@@ -93,6 +93,7 @@ namespace SH1107 {
 
     //% block="Afficher texte %texte"
     
+    
     //% block="Afficher texte %texte"
     export function afficherTexte(texte: string): void {
         if (!initialized) {
@@ -101,18 +102,16 @@ namespace SH1107 {
 
         effacerOLED()
 
-        // Affiche un motif de test sur les 8 premières colonnes
-        for (let page = 0; page < 16; page++) {
-            sendCommand(0xB0 + page)
-            sendCommand(0x00)
-            sendCommand(0x10)
+        // Tester une seule page de 8 pixels de hauteur
+        sendCommand(0xB0)
+        sendCommand(0x00)
+        sendCommand(0x10)
 
-            for (let x = 0; x < WIDTH; x++) {
-                if (x < 8) {
-                    sendData(0xFF)
-                } else {
-                    sendData(0x00)
-                }
+        for (let x = 0; x < WIDTH; x++) {
+            if (x < 8) {
+                sendData(0xFF)
+            } else {
+                sendData(0x00)
             }
         }
     }
