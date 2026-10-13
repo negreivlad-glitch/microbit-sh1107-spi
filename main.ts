@@ -54,11 +54,16 @@ namespace SH1107 {
         sendPair(0xD5, 0x50)
         sendPair(0xD9, 0x22)
         sendPair(0xDB, 0x35)
-        sendCommand(0xA1)
+        sendCommand(0xA0)
         sendCommand(0xC0)
+        sendPair(0x81, 0x4F)
+        sendPair(0xD9, 0x22)
+        sendPair(0xDB, 0x35)
+        sendCommand(0xA4)
         sendCommand(0xA6)
-        sendPair(0x81, 0x80)
         sendCommand(0xAF)
+        basic.pause(100)
+        sendCommand(0xA5)
 
         basic.pause(100)
         initialized = true
