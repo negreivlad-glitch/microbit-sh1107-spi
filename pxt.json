@@ -1,0 +1,14 @@
+{
+  "name": "microbit-sh1107-spi",
+  "version": "0.0.1",
+  "description": "Extension OLED SH1107 SPI pour micro:bit",
+  "license": "MIT",
+  "dependencies": {
+    "core": "*"
+  },
+  "files": [
+    "main.ts"
+  ],
+  "testFiles": [],
+  "public": true
+}
