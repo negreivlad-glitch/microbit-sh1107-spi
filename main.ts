@@ -72,6 +72,8 @@ namespace SH1107 {
     }
 
     //% block="Effacer OLED"
+    
+    //% block="Effacer OLED"
     export function effacerOLED(): void {
         if (!initialized) {
             return
@@ -87,6 +89,7 @@ namespace SH1107 {
             }
         }
     }
+
 
     //% block="Afficher texte %texte"
     export function afficherTexte(texte: string): void {
