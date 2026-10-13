@@ -94,6 +94,7 @@ namespace SH1107 {
     //% block="Afficher texte %texte"
     
     
+    
     //% block="Afficher texte %texte"
     export function afficherTexte(texte: string): void {
         if (!initialized) {
@@ -102,17 +103,21 @@ namespace SH1107 {
 
         effacerOLED()
 
-        // Tester une seule page de 8 pixels de hauteur
+        // Motif de test représentant un A en 5 x 7 pixels
+        const lettreA = [
+            0x7E,
+            0x11,
+            0x11,
+            0x11,
+            0x7E
+        ]
+
         sendCommand(0xB0)
         sendCommand(0x00)
         sendCommand(0x10)
 
-        for (let x = 0; x < WIDTH; x++) {
-            if (x < 8) {
-                sendData(0xFF)
-            } else {
-                sendData(0x00)
-            }
+        for (let i = 0; i < lettreA.length; i++) {
+            sendData(lettreA[i])
         }
     }
 }
