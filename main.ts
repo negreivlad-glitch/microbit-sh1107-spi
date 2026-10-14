@@ -1,12 +1,122 @@
-
 namespace SH1107 {
     const CS = DigitalPin.P16
     const DC = DigitalPin.P2
     const RST = DigitalPin.P12
 
-    const WIDTH = 64
-    const HEIGHT = 128
+    // Dimensions vues en paysage
+    const WIDTH = 128
+    const HEIGHT = 64
+    // Dimensions natives de l'écran
+    const PAGES = 16
+    const COLS = 64
+
+    // Si le texte est inversé, essaie de passer l'un de ces réglages à true
+    const MIROIR_HORIZONTAL = false
+    const MIROIR_VERTICAL = false
+
     let initialized = false
+    let buffer = pins.createBuffer(PAGES * COLS)
+
+    // Police 5x7 (ASCII 32 à 126), 5 colonnes par caractère
+    const FONT: number[] = [
+        0x00, 0x00, 0x00, 0x00, 0x00, // espace
+        0x00, 0x00, 0x5F, 0x00, 0x00, // !
+        0x00, 0x07, 0x00, 0x07, 0x00, // "
+        0x14, 0x7F, 0x14, 0x7F, 0x14, // #
+        0x24, 0x2A, 0x7F, 0x2A, 0x12, // $
+        0x23, 0x13, 0x08, 0x64, 0x62, // %
+        0x36, 0x49, 0x55, 0x22, 0x50, // &
+        0x00, 0x05, 0x03, 0x00, 0x00, // '
+        0x00, 0x1C, 0x22, 0x41, 0x00, // (
+        0x00, 0x41, 0x22, 0x1C, 0x00, // )
+        0x14, 0x08, 0x3E, 0x08, 0x14, // *
+        0x08, 0x08, 0x3E, 0x08, 0x08, // +
+        0x00, 0x50, 0x30, 0x00, 0x00, // ,
+        0x08, 0x08, 0x08, 0x08, 0x08, // -
+        0x00, 0x60, 0x60, 0x00, 0x00, // .
+        0x20, 0x10, 0x08, 0x04, 0x02, // /
+        0x3E, 0x51, 0x49, 0x45, 0x3E, // 0
+        0x00, 0x42, 0x7F, 0x40, 0x00, // 1
+        0x42, 0x61, 0x51, 0x49, 0x46, // 2
+        0x21, 0x41, 0x45, 0x4B, 0x31, // 3
+        0x18, 0x14, 0x12, 0x7F, 0x10, // 4
+        0x27, 0x45, 0x45, 0x45, 0x39, // 5
+        0x3C, 0x4A, 0x49, 0x49, 0x30, // 6
+        0x01, 0x71, 0x09, 0x05, 0x03, // 7
+        0x36, 0x49, 0x49, 0x49, 0x36, // 8
+        0x06, 0x49, 0x49, 0x29, 0x1E, // 9
+        0x00, 0x36, 0x36, 0x00, 0x00, // :
+        0x00, 0x56, 0x36, 0x00, 0x00, // ;
+        0x08, 0x14, 0x22, 0x41, 0x00, // <
+        0x14, 0x14, 0x14, 0x14, 0x14, // =
+        0x00, 0x41, 0x22, 0x14, 0x08, // >
+        0x02, 0x01, 0x51, 0x09, 0x06, // ?
+        0x32, 0x49, 0x79, 0x41, 0x3E, // @
+        0x7E, 0x11, 0x11, 0x11, 0x7E, // A
+        0x7F, 0x49, 0x49, 0x49, 0x36, // B
+        0x3E, 0x41, 0x41, 0x41, 0x22, // C
+        0x7F, 0x41, 0x41, 0x22, 0x1C, // D
+        0x7F, 0x49, 0x49, 0x49, 0x41, // E
+        0x7F, 0x09, 0x09, 0x09, 0x01, // F
+        0x3E, 0x41, 0x49, 0x49, 0x7A, // G
+        0x7F, 0x08, 0x08, 0x08, 0x7F, // H
+        0x00, 0x41, 0x7F, 0x41, 0x00, // I
+        0x20, 0x40, 0x41, 0x3F, 0x01, // J
+        0x7F, 0x08, 0x14, 0x22, 0x41, // K
+        0x7F, 0x40, 0x40, 0x40, 0x40, // L
+        0x7F, 0x02, 0x0C, 0x02, 0x7F, // M
+        0x7F, 0x04, 0x08, 0x10, 0x7F, // N
+        0x3E, 0x41, 0x41, 0x41, 0x3E, // O
+        0x7F, 0x09, 0x09, 0x09, 0x06, // P
+        0x3E, 0x41, 0x51, 0x21, 0x5E, // Q
+        0x7F, 0x09, 0x19, 0x29, 0x46, // R
+        0x46, 0x49, 0x49, 0x49, 0x31, // S
+        0x01, 0x01, 0x7F, 0x01, 0x01, // T
+        0x3F, 0x40, 0x40, 0x40, 0x3F, // U
+        0x1F, 0x20, 0x40, 0x20, 0x1F, // V
+        0x3F, 0x40, 0x38, 0x40, 0x3F, // W
+        0x63, 0x14, 0x08, 0x14, 0x63, // X
+        0x07, 0x08, 0x70, 0x08, 0x07, // Y
+        0x61, 0x51, 0x49, 0x45, 0x43, // Z
+        0x00, 0x7F, 0x41, 0x41, 0x00, // [
+        0x02, 0x04, 0x08, 0x10, 0x20, // backslash
+        0x00, 0x41, 0x41, 0x7F, 0x00, // ]
+        0x04, 0x02, 0x01, 0x02, 0x04, // ^
+        0x40, 0x40, 0x40, 0x40, 0x40, // _
+        0x00, 0x01, 0x02, 0x04, 0x00, // `
+        0x20, 0x54, 0x54, 0x54, 0x78, // a
+        0x7F, 0x48, 0x44, 0x44, 0x38, // b
+        0x38, 0x44, 0x44, 0x44, 0x20, // c
+        0x38, 0x44, 0x44, 0x48, 0x7F, // d
+        0x38, 0x54, 0x54, 0x54, 0x18, // e
+        0x08, 0x7E, 0x09, 0x01, 0x02, // f
+        0x08, 0x14, 0x54, 0x54, 0x3C, // g
+        0x7F, 0x08, 0x04, 0x04, 0x78, // h
+        0x00, 0x44, 0x7D, 0x40, 0x00, // i
+        0x20, 0x40, 0x44, 0x3D, 0x00, // j
+        0x00, 0x7F, 0x10, 0x28, 0x44, // k
+        0x00, 0x41, 0x7F, 0x40, 0x00, // l
+        0x7C, 0x04, 0x18, 0x04, 0x78, // m
+        0x7C, 0x08, 0x04, 0x04, 0x78, // n
+        0x38, 0x44, 0x44, 0x44, 0x38, // o
+        0x7C, 0x14, 0x14, 0x14, 0x08, // p
+        0x08, 0x14, 0x14, 0x18, 0x7C, // q
+        0x7C, 0x08, 0x04, 0x04, 0x08, // r
+        0x48, 0x54, 0x54, 0x54, 0x20, // s
+        0x04, 0x3F, 0x44, 0x40, 0x20, // t
+        0x3C, 0x40, 0x40, 0x20, 0x7C, // u
+        0x1C, 0x20, 0x40, 0x20, 0x1C, // v
+        0x3C, 0x40, 0x30, 0x40, 0x3C, // w
+        0x44, 0x28, 0x10, 0x28, 0x44, // x
+        0x0C, 0x50, 0x50, 0x50, 0x3C, // y
+        0x44, 0x64, 0x54, 0x4C, 0x44, // z
+        0x00, 0x08, 0x36, 0x41, 0x00, // {
+        0x00, 0x00, 0x7F, 0x00, 0x00, // |
+        0x00, 0x41, 0x36, 0x08, 0x00, // }
+        0x10, 0x08, 0x08, 0x10, 0x08  // ~
+    ]
+
+    // ---------- Bas niveau ----------
 
     function sendCommand(value: number): void {
         pins.digitalWritePin(CS, 0)
@@ -15,17 +125,97 @@ namespace SH1107 {
         pins.digitalWritePin(CS, 1)
     }
 
-    function sendData(value: number): void {
-        pins.digitalWritePin(CS, 0)
-        pins.digitalWritePin(DC, 1)
-        pins.spiWrite(value)
-        pins.digitalWritePin(CS, 1)
-    }
-
     function sendPair(command: number, value: number): void {
         sendCommand(command)
         sendCommand(value)
     }
+
+    // Envoie le tampon mémoire vers l'écran
+    function rafraichir(): void {
+        for (let page = 0; page < PAGES; page++) {
+            sendCommand(0xB0 + page)
+            sendCommand(0x00)
+            sendCommand(0x10)
+
+            pins.digitalWritePin(CS, 0)
+            pins.digitalWritePin(DC, 1)
+            for (let c = 0; c < COLS; c++) {
+                pins.spiWrite(buffer.getUint8(page * COLS + c))
+            }
+            pins.digitalWritePin(CS, 1)
+        }
+    }
+
+    // Allume un pixel (x : 0-127 gauche→droite, y : 0-63 haut→bas)
+    function setPixel(x: number, y: number): void {
+        if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+            return
+        }
+        if (MIROIR_HORIZONTAL) {
+            x = WIDTH - 1 - x
+        }
+        if (MIROIR_VERTICAL) {
+            y = HEIGHT - 1 - y
+        }
+        // Conversion paysage → orientation native de l'écran
+        const ligne = WIDTH - 1 - x
+        const colonne = y
+        const index = (ligne >> 3) * COLS + colonne
+        buffer.setUint8(index, buffer.getUint8(index) | (1 << (ligne & 7)))
+    }
+
+    function dessinerCaractere(code: number, x: number, y: number, taille: number): void {
+        if (code < 32 || code > 126) {
+            code = 63 // '?'
+        }
+        const base = (code - 32) * 5
+        for (let col = 0; col < 5; col++) {
+            const bits = FONT[base + col]
+            for (let lig = 0; lig < 7; lig++) {
+                if ((bits >> lig) & 1) {
+                    for (let dx = 0; dx < taille; dx++) {
+                        for (let dy = 0; dy < taille; dy++) {
+                            setPixel(x + col * taille + dx, y + lig * taille + dy)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Remplace les lettres accentuées par leur version simple
+    function sansAccent(code: number): number {
+        const accents = "àâäéèêëîïôöùûüç"
+        const simples = "aaaeeeeiioouuuc"
+        const i = accents.indexOf(String.fromCharCode(code))
+        if (i >= 0) {
+            return simples.charCodeAt(i)
+        }
+        return code
+    }
+
+    function dessinerTexte(texte: string, x0: number, y0: number, taille: number): void {
+        let x = x0
+        let y = y0
+        const largeurCar = 6 * taille
+        const hauteurLigne = 8 * taille
+        for (let i = 0; i < texte.length; i++) {
+            const code = sansAccent(texte.charCodeAt(i))
+            if (code == 10) { // retour à la ligne
+                x = x0
+                y += hauteurLigne
+                continue
+            }
+            if (x + 5 * taille > WIDTH) { // retour automatique
+                x = x0
+                y += hauteurLigne
+            }
+            dessinerCaractere(code, x, y, taille)
+            x += largeurCar
+        }
+    }
+
+    // ---------- Blocs MakeCode ----------
 
     //% block="Initialiser OLED"
     export function initialiserOLED(): void {
@@ -57,67 +247,45 @@ namespace SH1107 {
         sendCommand(0xA0)
         sendCommand(0xC0)
         sendPair(0x81, 0x4F)
-        sendPair(0xD9, 0x22)
-        sendPair(0xDB, 0x35)
         sendCommand(0xA4)
         sendCommand(0xA6)
         sendCommand(0xAF)
         basic.pause(100)
-        sendCommand(0xA4)
-        sendCommand(0xA6)
 
-        basic.pause(100)
         initialized = true
-        //effacerOLED()
+        effacerOLED()
     }
 
-    //% block="Effacer OLED"
-    
     //% block="Effacer OLED"
     export function effacerOLED(): void {
         if (!initialized) {
             return
         }
-
-        for (let page = 0; page < 16; page++) {
-            sendCommand(0xB0 + page)
-            sendCommand(0x00)
-            sendCommand(0x10)
-
-            for (let x = 0; x < WIDTH; x++) {
-                sendData(0x00)
-            }
-        }
+        buffer.fill(0)
+        rafraichir()
     }
 
-
     //% block="Afficher texte %texte"
-    
-    
-    
-    //% block="Afficher texte %texte"
+    //% texte.defl="Bonjour"
     export function afficherTexte(texte: string): void {
         if (!initialized) {
             return
         }
+        buffer.fill(0)
+        dessinerTexte(texte, 0, 0, 1)
+        rafraichir()
+    }
 
-        effacerOLED()
-
-        // Motif de test représentant un A en 5 x 7 pixels
-        const lettreA = [
-            0x7E,
-            0x11,
-            0x11,
-            0x11,
-            0x7E
-        ]
-
-        sendCommand(0xB0)
-        sendCommand(0x00)
-        sendCommand(0x10)
-
-        for (let i = 0; i < lettreA.length; i++) {
-            sendData(lettreA[i])
+    //% block="Afficher texte %texte à x %x y %y taille %taille"
+    //% texte.defl="Bonjour"
+    //% x.defl=0 y.defl=0
+    //% taille.min=1 taille.max=4 taille.defl=1
+    export function afficherTexteEn(texte: string, x: number, y: number, taille: number): void {
+        if (!initialized) {
+            return
         }
+        buffer.fill(0)
+        dessinerTexte(texte, x, y, Math.max(1, Math.min(4, taille)))
+        rafraichir()
     }
 }
